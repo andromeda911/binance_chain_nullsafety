@@ -144,7 +144,8 @@ class WebsocketBinanceListener {
         onMessage);
   }
 
-  void subscribeCandlesticksUpdates(String marketPairSymbol, {CandlestickInterval interval = CandlestickInterval.INTERVAL_1h, Function(WsBinanceMessage<MarketDepthData> message)? onMessage}) {
+  void subscribeCandlesticksUpdates(String marketPairSymbol,
+      {CandlestickInterval interval = CandlestickInterval.INTERVAL_1h, Function(WsBinanceMessage<MarketDepthData> message)? onMessage}) {
     _subscribe<MarketDepthData>(
         json.encode({
           'method': 'subscribe',

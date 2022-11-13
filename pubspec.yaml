@@ -10,7 +10,6 @@ environment:
 dependencies:
   http: ^0.13.3
   protobuf: ^2.0.0
-  bip39: ^1.0.6
   pointycastle: ^3.3.4
   web_socket_channel: ^2.1.0
   decimal: ^1.2.0
@@ -19,6 +18,9 @@ dependencies:
   convert: ^3.0.0
   fixnum: ^1.0.0
   uuid: ^3.0.4
+  web3dart: 
+    path: C:\Users\OLEGATOR\Desktop\web3dart
+  bip39_mnemonic: ^3.0.4
   
 
 dev_dependencies:

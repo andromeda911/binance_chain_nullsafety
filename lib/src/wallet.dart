@@ -15,7 +15,7 @@ import 'package:binance_chain/src/utils/keystore.dart';
 import 'package:pointycastle/export.dart';
 import 'package:pointycastle/digests/sha3.dart';
 import 'package:convert/convert.dart';
-import 'package:bip39/bip39.dart' as bip39;
+import 'package:bip39_mnemonic/bip39_mnemonic.dart' as bip39;
 
 class Wallet {
   String? _privateKey;
@@ -96,9 +96,10 @@ class Wallet {
   }
 
   /// Create wallet object from mnemonic phrase 12-24 words.
-  Wallet.fromMnemonicPhrase(String mnemonicPhrase, BinanceEnvironment env) {
-    if (bip39.validateMnemonic(mnemonicPhrase)) {
-      _bip32 = bip32.BIP32.fromSeed(bip39.mnemonicToSeed(mnemonicPhrase)).derivePath("44'/714'/0'/0/0");
+  Wallet.fromMnemonicPhrase(String mnemonicPhrase, bip39.Language language, BinanceEnvironment env) {
+    if (validateMnemonic(mnemonicPhrase, language)) {
+      var mnemonicObj = bip39.Mnemonic.fromSentence(mnemonicPhrase, language);
+      _bip32 = bip32.BIP32.fromSeed(Uint8List.fromList(mnemonicObj.seed)).derivePath("44'/714'/0'/0/0");
       _privateKey = hex.encode(_bip32.privateKey!);
       _publicKey = hex.encode(_bip32.publicKey!);
       _publicKeyUncompressed = hex.encode(_bip32.publicKeyUncompressed!);
@@ -147,7 +148,9 @@ class Wallet {
     var derivedKey = kdfDerivator.process(utf8.encode(password) as Uint8List);
 
     var ciphertextbytes = hex.decode(keystore.crypto!.ciphertext!);
-    var macBody = Uint8List(16 + ciphertextbytes.length)..setRange(0, 16, derivedKey.sublist(16, 32))..setRange(16, ciphertextbytes.length + 16, ciphertextbytes);
+    var macBody = Uint8List(16 + ciphertextbytes.length)
+      ..setRange(0, 16, derivedKey.sublist(16, 32))
+      ..setRange(16, ciphertextbytes.length + 16, ciphertextbytes);
 
     var mac = SHA3Digest(int.parse(keystore.crypto!.cipher!.split('-')[1]) * 2).process(macBody);
     if (hex.encode(mac) == keystore.crypto!.mac) {
@@ -216,7 +219,9 @@ class Wallet {
 
     crypto.ciphertext = hex.encode(cipherText);
 
-    var macBody = Uint8List(16 + cipherText.length)..setRange(0, 16, derivedKey.sublist(16, 32))..setRange(16, cipherText.length + 16, cipherText);
+    var macBody = Uint8List(16 + cipherText.length)
+      ..setRange(0, 16, derivedKey.sublist(16, 32))
+      ..setRange(16, cipherText.length + 16, cipherText);
 
     var mac = SHA3Digest(int.parse(keystore.crypto!.cipher!.split('-')[1]) * 2).process(macBody);
 
@@ -239,7 +244,8 @@ class Wallet {
 
   /// Sign message using secp256k1
   Uint8List sign_message(Uint8List message) {
-    var dsaSigner = ECDSASigner(SHA256Digest(), HMac(SHA256Digest(), 64))..init(true, PrivateKeyParameter(ECPrivateKey(BigInt.parse(privateKey!, radix: 16), ECDomainParameters('secp256k1'))));
+    var dsaSigner = ECDSASigner(SHA256Digest(), HMac(SHA256Digest(), 64))
+      ..init(true, PrivateKeyParameter(ECPrivateKey(BigInt.parse(privateKey!, radix: 16), ECDomainParameters('secp256k1'))));
     var s = dsaSigner.generateSignature(message) as ECSignature;
     var buffer = Uint8List(64);
     var bi = encodeBigInt(s.r);
@@ -274,4 +280,13 @@ class Wallet {
 bool validateAddress(String address) {
   var bechDecoded = bech32_decode(address);
   return bechDecoded[0] != null;
+}
+
+bool validateMnemonic(String mnemonic, bip39.Language language) {
+  try {
+    bip39.Mnemonic.fromSentence(mnemonic, language);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
